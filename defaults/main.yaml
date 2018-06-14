@@ -1,0 +1,5 @@
+---
+# Define the attirbutes to be configured on interfaces (see README for examples)
+interfaces: { }
+
+
