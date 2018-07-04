@@ -46,7 +46,7 @@
   nxos_vrf_interface:
     interface: "{{ item.value.name }}"
     state: "{{ item.value.vrf.state | default(omit) }}"
-    vrf: "{{ item.value.vrf.name | default(omit) }}"    
+    vrf: "{{ item.value.vrf.name }}"    
   with_dict: "{{ interfaces }}"
   when: >
     ansible_network_os == 'nxos' and
