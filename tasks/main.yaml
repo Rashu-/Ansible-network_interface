@@ -7,64 +7,13 @@
       ansible_network_os == 'ios'
     msg: "Network device OS not defined or not supported by this role: {{ ansible_network_os }}"
 
-- name: Configure interface physical settings
-  nxos_interface:
-    name: "{{ item.value.name }}"
-    admin_state: "{{ item.value.admin_state | default('down') }}"
-    description: "{{ item.value.description | default(omit) }}"
-    duplex: "{{ item.value.duplex | default(omit) }}"
-    speed: "{{ item.value.speed | default(omit) }}"
-    mode: "{{ item.value.mode | default(omit) }}"
-    state: "{{ item.value.state | default(omit) }}"
-  with_dict: "{{ interfaces }}"
+- include_tasks: nxos_inner.yaml
+  loop: "{{ interfaces | dict2items }}"
+  loop_control:
+    loop_var: outer_item
   when: >
-    ansible_network_os == 'nxos' and  
+    ansible_network_os == 'nxos' and
     interfaces is defined
-  tags: 
+  tags:
     - interface_config
-    - nxos 
-
-- name: Configure interface layer 2 settings
-  nxos_l2_interface:
-    name: "{{ item.value.name }}"
-    state: "{{ item.value.switchport.state | default(omit) }}"
-    mode: "{{ item.value.switchport.mode | default(omit) }}"
-    access_vlan: "{{ item.value.switchport.access_vlan | default(omit) }}"
-    native_vlan: "{{ item.value.switchport.trunk_native_vlan | default(omit) }}"
-    trunk_allowed_vlans: "{{ item.value.switchport.trunk_allowed_vlans | default(omit) }}"
-    trunk_vlans: "{{ item.value.switchport.trunk_vlans | default(omit) }}"
-  with_dict: "{{ interfaces }}"
-  when: >
-    ansible_network_os == 'nxos' and 
-    item.value.switchport is defined
-  tags: 
-    - interface_config
-    - nxos 
-
-# VRF config in front of interface layer 3 settings as adding an interface to a vrf will remove all layer 3 attributes
-- name: Configure interface vrf
-  nxos_vrf_interface:
-    interface: "{{ item.value.name }}"
-    state: "{{ item.value.vrf.state | default(omit) }}"
-    vrf: "{{ item.value.vrf.name }}"    
-  with_dict: "{{ interfaces }}"
-  when: >
-    ansible_network_os == 'nxos' and
-    item.value.vrf is defined
-  tags: 
-    - interface_config
-    - nxos 
-
-- name: Configure interface layer 3 settings
-  nxos_l3_interface:
-    name: "{{ item.value.name }}"
-    state: "{{ item.value.ip.state | default(omit) }}"
-    ipv4: "{{ item.value.ip.address.ipv4_address | default(omit) }}"
-    ipv6: "{{ item.value.ip.address.ipv6_address | default(omit) }}"
-  with_dict: "{{ interfaces }}"
-  when: >
-    ansible_network_os == 'nxos' and
-    item.value.ip is defined
-  tags: 
-    - interface_config
-    - nxos 
+    - nxos
