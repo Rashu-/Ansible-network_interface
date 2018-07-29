@@ -7,13 +7,79 @@
       ansible_network_os == 'ios'
     msg: "Network device OS not defined or not supported by this role: {{ ansible_network_os }}"
 
-- include_tasks: nxos_inner.yaml
-  loop: "{{ interfaces | dict2items }}"
-  loop_control:
-    loop_var: outer_item
+- name: Configure interface physical settings
+  nxos_interface:
+    name: "{{ item.name}}"
+    admin_state: "{{ item.admin_state | default('down') }}"
+    description: "{{ item.description | default(omit) }}"
+    duplex: "{{ item.duplex | default(omit) }}"
+    speed: "{{ item.speed | default(omit) }}"
+    mode: "{{ item.mode | default(omit) }}"
+    state: "{{ item.state | default(omit) }}"
+  loop: "{{ interfaces | net_int_filter }}"
   when: >
     ansible_network_os == 'nxos' and
-    interfaces is defined
+    item.name is defined
+  tags:
+    - interface_config
+    - nxos
+
+- name: Configure interface layer 2 settings
+  nxos_l2_interface:
+    name: "{{ item.name }}"
+    state: "{{ item.switchport.state | default(omit) }}"
+    mode: "{{ item.switchport.mode | default(omit) }}"
+    access_vlan: "{{ item.switchport.access_vlan | default(omit) }}"
+    native_vlan: "{{ item.switchport.trunk_native_vlan | default(omit) }}"
+    trunk_allowed_vlans: "{{ item.switchport.trunk_allowed_vlans | default(omit) }}"
+    trunk_vlans: "{{ item.switchport.trunk_vlans | default(omit) }}"
+  loop: "{{ interfaces | net_int_filter }}"
+  when: >
+    ansible_network_os == 'nxos' and
+    item.switchport is defined
+  tags:
+    - interface_config
+    - nxos
+
+# VRF config in front of interface layer 3 settings as adding an interface to a vrf will remove all layer 3 attributes
+- name: Configure interface vrf
+  nxos_vrf_interface:
+    interface: "{{ item.name }}"
+    state: "{{ item.vrf.state | default(omit) }}"
+    vrf: "{{ item.vrf.name }}"
+  loop: "{{ interfaces | net_int_filter }}"
+  when: >
+    ansible_network_os == 'nxos' and
+    item.vrf is defined
+  tags:
+    - interface_config
+    - nxos
+
+- name: Configure interface layer 3 settings
+  nxos_l3_interface:
+    name: "{{ item.name }}"
+    state: "{{ item.ip.state | default(omit) }}"
+    ipv4: "{{ item.ip.address.ipv4_address | default(omit) }}"
+    ipv6: "{{ item.ip.address.ipv6_address | default(omit) }}"
+  loop: "{{ interfaces | net_int_filter }}"
+  when: >
+    ansible_network_os == 'nxos' and
+    item.ip is defined
+  tags:
+    - interface_config
+    - nxos
+
+- name: Configure subinterface dot1q
+  nxos_ip_interface:
+    interface: "{{ item.name }}"
+    dot1q: "{{ item.ip.dot1q | default(1) }}"
+    state: "{{ item.ip.state | default(omit) }}"
+    addr: "{{ item.ip.address.ipv4_address | ipaddr('address') }}"
+    mask: "{{ item.ip.address.ipv4_address | ipaddr('prefix') }}"
+  loop: "{{ interfaces | net_int_filter }}"
+  when: >
+    ansible_network_os == 'nxos' and
+    item.ip is defined
   tags:
     - interface_config
     - nxos
