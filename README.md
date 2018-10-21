@@ -16,7 +16,118 @@ nxos_vrf_interface - vrf needs to exist on device before configured on a interfa
 ```yaml
 ---
 
+- name: Example of how to configure an eth interface physical settings and sets mode to layer2
+  hosts: switches
+    vars:
+      interfaces:
+        Ethernet:
+          1/1:
+            description: "*** To server 1 ***"
+            admin_state: up
+            state: present
+            duplex: full
+            speed: 10000
+            mode: layer2
+  roles:
+    - ansible-network_interface
 
+- name: Example of how to configure an interface layer2 trunk
+  hosts: switches
+    vars:
+      interfaces:
+        port-channel:
+          101:
+            switchport:
+              state: present
+              mode: trunk
+              trunk_allowed_vlans: 11-15
+              native_vlan: 99
+  roles:
+    - ansible-network_interface
+    
+- name: Example of how to configure an interface as part of vrf
+  hosts: switches
+    vars:
+      interfaces:
+        Vlan:
+          101:
+            vrf:
+              name: production
+              state: present
+  roles:
+    - ansible-network_interface
+
+- name: Example of how to configure an interface layer3 settings
+  hosts: switches
+    vars:
+      interfaces:
+        Vlan:
+          101:
+            ip:
+              state: present
+              address:
+                ipv4_address: 192.0.2.1/24
+                ipv6_address: 2001:DB8::1/64
+  roles:
+    - ansible-network_interface
+
+- name: Example of how to configure an interface layer3 settings with dot1q
+  hosts: switches
+    vars:
+      interfaces:
+        Ethernet:
+          1/1.23:
+            ip:
+              state: present
+              address:
+                ipv4_address: 192.0.2.1/24
+              dot1q: 23
+  roles:
+    - ansible-network_interface
+
+# Most of the options above can be combined
+
+- name: Example of how to configure an loopback, port-channel and ethernet interface
+  hosts: switches
+    vars:
+      interfaces:
+        Ethernet:
+          1/1.23:
+            description: "*** uplink ***"
+            admin_state: up
+            state: present          
+            ip:
+              state: present
+              address:
+                ipv4_address: 192.0.2.1/25
+              dot1q: 23
+            vrf:
+              name: staging
+              state: present
+        loopback:
+          0:
+            description: "*** ospf loopback ***"
+            admin_state: up
+            mode: layer3
+            state: present
+            vrf:
+              name: prod
+              state: present
+            ip:
+              address:
+                ipv4_address: 192.0.2.128/32
+        port-channel:
+          11:
+            description: "*** link to host A ***"
+            admin_state: up
+            mode: layer2
+            state: present
+            switchport:
+              state: present
+              mode: trunk
+              trunk_allowed_vlans: 13-15
+  roles:
+    - ansible-network_interface
 
 ```
 
