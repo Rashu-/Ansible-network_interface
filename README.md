@@ -134,7 +134,7 @@ nxos_vrf_interface - vrf needs to exist on device before configured on a interfa
 ## Role variables
 
 ```yaml
-# Define the attirbutes to be configured on interfaces (see README for examples)
+# Define the attributes to be configured on interfaces (see README for examples)
 interfaces: { }
 ```
 
